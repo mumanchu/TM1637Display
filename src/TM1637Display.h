@@ -45,7 +45,7 @@ public:
 	void display7SegmentCode(byte position, byte code7Seg);
 	void displayChar(byte position, char ch);
 	void displayString(const char* s, byte offset, byte length);
-	void displayString(const char* s) { displayString(s, 0, 4); }
+	void displayString(const char* s) { displayString(s, 0, numDigits); }
 	void clearDisplay();
 
 protected:
@@ -230,9 +230,12 @@ void TM1637Display::writeChars(const char* data,
 
 	// send each display character as 7-segment code
 	for (int i = startPosition; i < startPosition + length; ++i) {
-		byte b = *data++;
-		if (ascii)
-			b = get7SegmentCode(b);
+		byte b = *data;
+		if (b != '\0') {
+			if (ascii)
+				b = get7SegmentCode(b);
+			++data;
+		}
 		// '.' or ':' position
 		if (dotPosition && i == dotPosition - 1)
 			b |= 0x80;
