@@ -1,7 +1,7 @@
 #pragma once
 
 /////////////////////////////////////////////////////////////////////
-// Driver for TM1637 7-Segment LED display with 2..6 digits
+// Driver for TM1637 7-Segment LED display with 1..6 digits
 // Copyright (C) 2026.05.22, mumanchu & muman.ch
 // https://github.com/mumanchu
 // https://muman.ch
@@ -111,7 +111,7 @@ const byte TM1637Display::charMap[38] =
 	0b00011100,    // u
 	0b01101110,    // y
 	0b00111001,    // C [35]
-	0b01100011,    // ° \xB0 (degrees) [36]
+	0b01100011,    // Â° \xB0 (degrees) [36]
 
 	0b00000000     // NUL [37]
 };
@@ -122,14 +122,14 @@ const char* TM1637Display::charSet =
 //   0         1         2         3      
 //   0123456789012345678901234567890123456
 	"0123456789AbcdEF -HhIiJLlOoPqrStUuyC\xB0";
-//   |---- hex -----|                    °
+//   |---- hex -----|                    Â°
 
 
 // Call this from setup()
 bool TM1637Display::begin(uint clockPin, uint dataPin, uint numberOfDigits /*=4*/)
 {
 	ASSERT(digitalPinToPinName(clockPin) != NC && digitalPinToPinName(dataPin) != NC);
-	ASSERT(numberOfDigits >= 2 && numberOfDigits <= 6);
+	ASSERT(numberOfDigits >= 1 && numberOfDigits <= 6);
 
 	clkPin = clockPin;
 	datPin = dataPin;
