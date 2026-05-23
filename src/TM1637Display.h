@@ -2,12 +2,12 @@
 
 /////////////////////////////////////////////////////////////////////
 // Driver for TM1637 7-Segment LED display with 1..6 digits
-// Copyright (C) 2026.05.22, mumanchu & muman.ch
+// Copyright (C) 2026.05.23, mumanchu & muman.ch
 // https://github.com/mumanchu
 // https://muman.ch
 /*
 Q.	There are several TM1637 libraries out there. Why re-invent the wheel?
-A.	Some wheels are more efficient than others ;-)
+A.	Some wheels give a smoother ride.
 
 The display module can run on 5V or 3.3V. It's best to power it with 3.3V 
 if connected to a 3.3V microcontroller.
@@ -15,21 +15,25 @@ if connected to a 3.3V microcontroller.
 Two models of the display are available. One has a colon for a clock 
 display on digit 2. The other has decimal points for a decimal display. 
 They do not have both.
+
+DATA SHEET
+Take care, it's written in Chinglish
+https://cdn.velleman.eu/downloads/29/infosheets/tm1637_datasheet.pdf
 */
 
 // These are normally defined in MumanchuDebug.h
 #ifndef ASSERT
 #define LOGERROR(s) { Serial.println(s); Serial.flush(); }
 #define ASSERT(b) if (!(b)) { LOGERROR("ASSERT failed"); return false; }
-#endif
 #define ASSERT2(b) if (!(b)) { LOGERROR("ASSERT failed"); return; }
+#endif
 
 
 class TM1637Display
 {
 protected:
-	uint clkPin;
-	uint datPin;
+	uint pinClk;
+	uint pinDio;
 	uint numDigits;
 	static const byte charMap[38];
 	static const char* charSet;
@@ -53,7 +57,8 @@ protected:
 	void writeChars(const char* data, byte startPosition, 
 		byte length, bool ascii = true);
 	bool writeCommand(byte cmd);
-	bool clockOutByte(byte data);
+	bool writeByte(byte b);
+	void digitalWriteEx(uint pin, uint b);
 };
 
 
@@ -112,18 +117,18 @@ const byte TM1637Display::charMap[38] =
 	0b00011100,    // u
 	0b01101110,    // y
 	0b00111001,    // C [35]
-	0b01100011,    // ° \xB0 (degrees) [36]
+	0b01100011,    // \xb0 (degrees) [36]
 
 	0b00000000     // NUL [37]
 };
 
-// List of supported characters
+// Supported characters
 // offset into this string is the offset into charMap[]
 const char* TM1637Display::charSet =
 //   0         1         2         3      
 //   0123456789012345678901234567890123456
-	"0123456789AbcdEF -HhIiJLlOoPqrStUuyC\xB0";
-//   |---- hex -----|                    °
+	"0123456789AbcdEF -HhIiJLlOoPqrStUuyC\xb0";
+//   ----- hex ------
 
 
 // Call this from setup()
@@ -132,15 +137,11 @@ bool TM1637Display::begin(uint clockPin, uint dataPin, uint numberOfDigits /*=4*
 	ASSERT(digitalPinToPinName(clockPin) != NC && digitalPinToPinName(dataPin) != NC);
 	ASSERT(numberOfDigits >= 1 && numberOfDigits <= 6);
 
-	clkPin = clockPin;
-	datPin = dataPin;
+	pinClk = clockPin;;
+	pinDio = dataPin;
 	numDigits = numberOfDigits;
-
-	pinMode(clkPin, OUTPUT);
-	digitalWrite(clkPin, 1);
-	pinMode(datPin, OUTPUT);
-	digitalWrite(datPin, 1);
-
+	pinMode(pinClk, OUTPUT);
+	pinMode(pinDio, OUTPUT);
 	displayIsOn = true;
 	currentBrightness = 0;
 	return true;
@@ -214,20 +215,19 @@ void TM1637Display::clearDisplay()
 
 // Internal Methods
 
-void TM1637Display::writeChars(const char* data, 
+void TM1637Display::writeChars(const char* data,
 	byte startPosition, byte length, bool ascii /*=true*/)
 {
 	ASSERT2(startPosition < numDigits && (startPosition + length) <= numDigits);
 
-	// auto increment address command
+	// send auto increment address command
 	writeCommand(0x40);
 
 	// start message
-	digitalWrite(datPin, 0);
-	digitalWrite(clkPin, 0);
+	digitalWriteEx(pinDio, 0);
 
-	// start position
-	clockOutByte(0xC0 + startPosition);
+	// send start position
+	writeByte(0xc0 + (startPosition & 0x03));
 
 	// send each display character as 7-segment code
 	for (int i = startPosition; i < startPosition + length; ++i) {
@@ -240,53 +240,72 @@ void TM1637Display::writeChars(const char* data,
 		// '.' or ':' position
 		if (dotPosition && i == dotPosition - 1)
 			b |= 0x80;
-		clockOutByte(b);
+		writeByte(b);
 	}
 
 	// end message
-	digitalWrite(clkPin, 1);
-	digitalWrite(datPin, 1);
+	digitalWriteEx(pinClk, 1);
+	digitalWriteEx(pinDio, 1);
 }
 
 bool TM1637Display::writeCommand(byte cmd)
 {
-	digitalWrite(datPin, 0);
-	digitalWrite(clkPin, 0);
-	bool ack = clockOutByte(cmd);
-	digitalWrite(clkPin, 1);
-	digitalWrite(datPin, 1);
+	// start message
+	digitalWriteEx(pinDio, 0);
+
+	// send command
+	bool ack = writeByte(cmd);
+
+	// end message
+	digitalWriteEx(pinClk, 1);
+	digitalWriteEx(pinDio, 1);
+
 	return ack;
 }
 
-bool TM1637Display::clockOutByte(byte data)
+bool TM1637Display::writeByte(byte b)
 {
 	// clock out the byte, LS bit first
-	for (int i = 0; i < 8; ++i) {
-		digitalWrite(clkPin, 0);
-		digitalWrite(datPin, data & 1);
-		digitalWrite(clkPin, 1);
-		data >>= 1;
+	for (uint i = 0; i < 8; i++) {
+		digitalWriteEx(pinClk, 0);
+		digitalWriteEx(pinDio, b & 1);
+		digitalWriteEx(pinClk, 1);
+		b >>= 1;
 	}
 
-	// get ack
-	pinMode(datPin, INPUT);
-	// falling edge of 8th clock
-	digitalWrite(clkPin, 0);
+	// after the falling edge of the 8th clock
+	// the TM1637 will drive the line low to indicate ack
+	digitalWriteEx(pinClk, 0);
+	// change to input so we can read it
+	pinMode(pinDio, INPUT);
+	digitalWriteEx(pinClk, 1);
 
 	// wait for ack for up to 100us
+	// normally takes 3 or 4 us
 	ulong t1 = micros();
 	bool ack = false;
 	do {
-		if (digitalRead(datPin) == 0) {
+		if (digitalRead(pinDio) == 0) {
 			ack = true;
 			break;
 		}
 	} while ((micros() - t1) <= 100);
 
-	digitalWrite(clkPin, 1);
-	pinMode(datPin, OUTPUT);
-	digitalWrite(clkPin, 0);
+	// data pin back to output
+	pinMode(pinDio, OUTPUT);
+
+	// end message
+	digitalWriteEx(pinDio, 0);
+	digitalWriteEx(pinClk, 0);
 
 	return ack;
+}
+
+// digitalWrite() with a delay of a few microseconds
+// note that the calls themselves may take microseconds
+void TM1637Display::digitalWriteEx(uint pin, uint b)
+{
+	digitalWrite(pin, b);
+	delayMicroseconds(6);
 }
 
