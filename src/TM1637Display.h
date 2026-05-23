@@ -7,7 +7,7 @@
 // https://muman.ch
 /*
 Q.	There are several TM1637 libraries out there. Why re-invent the wheel?
-A.	A formula 1 wheel is more efficient than a cart wheel ;-)
+A.	Some wheels are more efficient than others ;-)
 
 The display module can run on 5V or 3.3V. It's best to power it with 3.3V 
 if connected to a 3.3V microcontroller.
