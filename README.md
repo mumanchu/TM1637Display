@@ -1,12 +1,11 @@
 # TM1637Display
 Library for TM1637 1..6 Digit 7-Segment LED Display.
 
+![tm1637-led.jpg](/images/tm1637-led.jpg)
+
 ## ** PRELIMINARY **
 
 _Let me know if it doesn't work..._
-
-![tm1637-led.jpg](/images/tm1637-led.jpg)
-
 
 ## Description
 
@@ -32,5 +31,20 @@ public:
 	void clearDisplay();
 };
 ```
+
+## Revision History
+
+| Date  | Revision | Description |
+|:---------- |:---------|:----------- |
+| 2026.05.23 | 0.0.0	| Preliminary |
+
+<br/>
+
+
+## Joke of the Week
+
+Matt's Certainty Principal \
+_If you measure the mass of a ping pong ball by hitting it with a sledge hammer travelling at the speed of light, it is certain that you won't be able to determine its direction._
+
 
 
