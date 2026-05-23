@@ -5,6 +5,9 @@ Library for TM1637 1..6 Digit 7-Segment LED Display.
 
 _Let me know if it doesn't work..._
 
+![tm1637-led.jpg](/images/tm1637-led.jpg)
+
+
 ## Description
 
 The display module can run on 5V or 3.3V. It's best to power it with 3.3V if connected to a 3.3V microcontroller.
