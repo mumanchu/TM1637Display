@@ -18,9 +18,10 @@ They do not have both.
 */
 
 // These are normally defined in MumanchuDebug.h
+#ifndef ASSERT
 #define LOGERROR(s) { Serial.println(s); Serial.flush(); }
 #define ASSERT(b) if (!(b)) { LOGERROR("ASSERT failed"); return false; }
-
+#endif
 #define ASSERT2(b) if (!(b)) { LOGERROR("ASSERT failed"); return; }
 
 
