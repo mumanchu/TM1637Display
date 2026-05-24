@@ -9,6 +9,8 @@
 Q.	There are several TM1637 libraries out there. Why re-invent the wheel?
 A.	Some wheels give a smoother ride.
 
+Most methods return bool: true = success, false = failed (ASSERT or no 'ack')
+
 The display module can run on 5V or 3.3V. It's best to power it with 3.3V 
 if connected to a 3.3V microcontroller.
 
@@ -25,7 +27,6 @@ https://cdn.velleman.eu/downloads/29/infosheets/tm1637_datasheet.pdf
 #ifndef ASSERT
 #define LOGERROR(s) { Serial.println(s); Serial.flush(); }
 #define ASSERT(b) if (!(b)) { LOGERROR("ASSERT failed"); return false; }
-#define ASSERT2(b) if (!(b)) { LOGERROR("ASSERT failed"); return; }
 #endif
 
 
@@ -41,20 +42,25 @@ protected:
 	bool displayIsOn;
 	byte dotPosition;
 
+	// This delay may be needed for some [cheap] modules but not all
+	// the 100pF capacitors on DIO and CLK could be too big, which slows 
+	// the signals, and some TM1637 chips look suspicious (clones?)
+	const uint delayInMicroseconds = 0;
+
 public:
 	bool begin(uint clkPin, uint dioPin, uint numberOfDigits = 4);
-	void displayOn(bool on);
-	void setBrightness(byte brightness);
+	bool displayOn(bool on);
+	bool setBrightness(byte brightness);
+	bool clearDisplay();
 	void setDotPosition(byte position);
 	byte get7SegmentCode(char ch);
-	void display7SegmentCode(byte position, byte code7Seg);
-	void displayChar(byte position, char ch);
-	void displayString(const char* s, byte offset, byte length);
-	void displayString(const char* s) { displayString(s, 0, numDigits); }
-	void clearDisplay();
+	bool display7SegmentCode(byte position, byte code7Seg);
+	bool displayChar(byte position, char ch);
+	bool displayString(const char* s);
+	bool displayString(const char* s, byte offset, byte length);
 
 protected:
-	void writeChars(const char* data, byte startPosition, 
+	bool writeChars(const char* data, byte startPosition, 
 		byte length, bool ascii = true);
 	bool writeCommand(byte cmd);
 	bool writeByte(byte b);
@@ -132,6 +138,8 @@ const char* TM1637Display::charSet =
 
 
 // Call this from setup()
+// it returns false on invalid pin number 
+// or if the chip does not respond (no 'ack')
 bool TM1637Display::begin(uint clockPin, uint dataPin, uint numberOfDigits /*=4*/)
 {
 	ASSERT(digitalPinToPinName(clockPin) != NC && digitalPinToPinName(dataPin) != NC);
@@ -140,39 +148,51 @@ bool TM1637Display::begin(uint clockPin, uint dataPin, uint numberOfDigits /*=4*
 	pinClk = clockPin;;
 	pinDio = dataPin;
 	numDigits = numberOfDigits;
-	pinMode(pinClk, OUTPUT);
-	pinMode(pinDio, OUTPUT);
 	displayIsOn = true;
 	currentBrightness = 0;
-	return true;
+
+	pinMode(pinClk, OUTPUT);
+	pinMode(pinDio, OUTPUT);
+	digitalWrite(pinClk, 1);
+	digitalWrite(pinDio, 1);
+	
+	return clearDisplay();
 }
 
 // Turn on/off the display
-void TM1637Display::displayOn(bool on)
+bool TM1637Display::displayOn(bool on)
 {
 	displayIsOn = on;
 	byte cmd = (displayIsOn ? 0x88 : 0x80) + currentBrightness;
-	writeCommand(cmd);
+	return writeCommand(cmd);
 }
 
 // Brightness is 0..7
-void TM1637Display::setBrightness(byte brightness)
+bool TM1637Display::setBrightness(byte brightness)
 {
 	if (brightness > 7)
 		brightness = 7;
 	currentBrightness = brightness;
 	byte cmd = (displayIsOn ? 0x88 : 0x80) + currentBrightness;
-	writeCommand(cmd);
+	return writeCommand(cmd);
+}
+
+bool TM1637Display::clearDisplay()
+{
+	dotPosition = 0;
+	char spaces[numDigits];
+	memset(spaces, ' ', numDigits);
+	return writeChars(spaces, 0, numDigits);
 }
 
 // Set the decimal point position or show the time separator colon ':' 
 // position = 0..4, where 0 = no dot, 1..4 = digit position
 // 2 = colon (if present) 
 // >>> call this BEFORE displaying the value
-void TM1637Display::setDotPosition(byte position)
+inline void TM1637Display::setDotPosition(byte position)
 {
-	ASSERT2(position < numDigits);
-	dotPosition = position;
+	if (position < numDigits);
+		dotPosition = position;
 }
 
 // Returns the 7-segment value of an ASCII character
@@ -185,43 +205,37 @@ byte TM1637Display::get7SegmentCode(char ch)
 
 // Display Methods
 
-void TM1637Display::display7SegmentCode(byte position, byte code7Seg)
+inline bool TM1637Display::display7SegmentCode(byte position, byte code7Seg)
 {
-	ASSERT2(position < numDigits);
 	char s[2] = { code7Seg, '\0' };
-	writeChars(s, position, 1, false);
+	return writeChars(s, position, 1, false);
 }
 
-void TM1637Display::displayChar(byte position, char ch)
+inline bool TM1637Display::displayChar(byte position, char ch)
 {
-	ASSERT2(position < numDigits);
 	char s[2] = { ch, '\0' };
-	writeChars(s, position, 1);
+	return writeChars(s, position, 1);
 }
 
-void TM1637Display::displayString(const char* s, byte position, byte length)
-{
-	ASSERT2(position < numDigits);
-	writeChars(s, position, length);
+inline bool TM1637Display::displayString(const char* s) 
+{ 
+	return displayString(s, 0, numDigits); 
 }
 
-void TM1637Display::clearDisplay()
+inline bool TM1637Display::displayString(const char* s, byte position, byte length)
 {
-	dotPosition = 0;
-	char spaces[numDigits];
-	memset(spaces, ' ', numDigits);
-	writeChars(spaces, 0, numDigits);
+	return writeChars(s, position, length);
 }
 
 // Internal Methods
 
-void TM1637Display::writeChars(const char* data,
+bool TM1637Display::writeChars(const char* data,
 	byte startPosition, byte length, bool ascii /*=true*/)
 {
-	ASSERT2(startPosition < numDigits && (startPosition + length) <= numDigits);
+	ASSERT(startPosition < numDigits && (startPosition + length) <= numDigits);
 
 	// send auto increment address command
-	writeCommand(0x40);
+	bool ack = writeCommand(0x40);
 
 	// start message
 	digitalWriteEx(pinDio, 0);
@@ -246,6 +260,8 @@ void TM1637Display::writeChars(const char* data,
 	// end message
 	digitalWriteEx(pinClk, 1);
 	digitalWriteEx(pinDio, 1);
+
+	return ack;
 }
 
 bool TM1637Display::writeCommand(byte cmd)
@@ -302,10 +318,11 @@ bool TM1637Display::writeByte(byte b)
 }
 
 // digitalWrite() with a delay of a few microseconds
-// note that the calls themselves may take microseconds
+// note that the call itself takes a few microseconds, 
+// which is usually enough
 void TM1637Display::digitalWriteEx(uint pin, uint b)
 {
 	digitalWrite(pin, b);
-	delayMicroseconds(6);
+	delayMicroseconds(delayInMicroseconds);
 }
 
