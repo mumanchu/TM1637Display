@@ -44,10 +44,10 @@ protected:
 	bool displayIsOn;
 	byte dotPosition;
 
-	// This delay may be needed for some [cheap] modules but not all.
-	// The 100pF capacitors on DIO and CLK could be too big, which slows 
-	// the signals, and some TM1637 chips look suspicious (slow clones
-	// or out-of-spec chips).
+	// This delay may be needed for some [cheap] modules.
+	// The 100pF capacitors on DIO and CLK can be too big, 
+	// which slows the signals. Some TM1637 chips may be 
+	// clones or out-of-spec chips.
 	const uint delayInMicroseconds = 0;
 
 public:
@@ -158,6 +158,11 @@ bool TM1637Display::begin(uint clockPin, uint dataPin, uint numberOfDigits /*=4*
 	pinMode(pinDio, OUTPUT);
 	digitalWrite(pinClk, 1);
 	digitalWrite(pinDio, 1);
+
+	// send auto increment address command
+	// the chip remains in this mode
+	if (!writeCommand(0x40))
+		return false;
 	
 	return clearDisplay();
 }
@@ -200,7 +205,7 @@ inline void TM1637Display::setDotPosition(byte position)
 
 // Returns the 7-segment value of an ASCII character
 // or 0 if the character is not supported or is 'space'
-byte TM1637Display::get7SegmentCode(char ch)
+inline byte TM1637Display::get7SegmentCode(char ch)
 {
 	char* p = strchr(charSet, ch);
 	return p ? charMap[p - charSet] : 0;
@@ -235,9 +240,6 @@ bool TM1637Display::writeChars(const char* data,
 {
 	ASSERT(startPosition < numDigits && (startPosition + length) <= numDigits);
 
-	// send auto increment address command
-	bool ack = writeCommand(0x40);
-
 	// start message
 	digitalWriteEx(pinDio, 0);
 
@@ -245,6 +247,7 @@ bool TM1637Display::writeChars(const char* data,
 	writeByte(0xc0 + (startPosition & 0x03));
 
 	// send each display character as 7-segment code
+	byte ack = true;
 	for (int i = startPosition; i < startPosition + length; ++i) {
 		byte b = *data;
 		if (b != '\0') {
@@ -255,7 +258,7 @@ bool TM1637Display::writeChars(const char* data,
 		// '.' or ':' position
 		if (dotPosition && i == dotPosition - 1)
 			b |= 0x80;
-		writeByte(b);
+		ack &= writeByte(b);
 	}
 
 	// end message
