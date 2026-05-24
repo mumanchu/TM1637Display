@@ -2,7 +2,7 @@
 
 /////////////////////////////////////////////////////////////////////
 // Driver for TM1637 7-Segment LED display with 1..6 digits
-// Copyright (C) 2026.05.23, mumanchu & muman.ch
+// Copyright (C) 2026.05.24, mumanchu & muman.ch
 // https://github.com/mumanchu
 // https://muman.ch
 /*
@@ -11,8 +11,10 @@ A.	Some wheels give a smoother ride.
 
 Most methods return bool: true = success, false = failed (ASSERT or no 'ack')
 
-The display module can run on 5V or 3.3V. It's best to power it with 3.3V 
-if connected to a 3.3V microcontroller.
+The display module can run on 5V or 3.3V. If connected to a 3.3V MCU it is 
+best to power it from 3.3V. Or use a logic-level converter because the 
+board has 10K pullup resistors to 5V which may eventually damage the MCU's
+3.3V pins if they are not 5V-tolerant.
 
 Two models of the display are available. One has a colon for a clock 
 display on digit 2. The other has decimal points for a decimal display. 
@@ -42,9 +44,9 @@ protected:
 	bool displayIsOn;
 	byte dotPosition;
 
-	// This delay may be needed for some [cheap] modules but not all
+	// This delay may be needed for some [cheap] modules but not all.
 	// the 100pF capacitors on DIO and CLK could be too big, which slows 
-	// the signals, and some TM1637 chips look suspicious (clones?)
+	// the signals, and some TM1637 chips look suspicious (slow clones?)
 	const uint delayInMicroseconds = 0;
 
 public:
@@ -188,7 +190,7 @@ bool TM1637Display::clearDisplay()
 // Set the decimal point position or show the time separator colon ':' 
 // position = 0..4, where 0 = no dot, 1..4 = digit position
 // 2 = colon (if present) 
-// >>> call this BEFORE displaying the value
+// >>> CALL THIS BEFORE DISPLAYING THE VALUE <<<
 inline void TM1637Display::setDotPosition(byte position)
 {
 	if (position < numDigits);
@@ -207,19 +209,17 @@ byte TM1637Display::get7SegmentCode(char ch)
 
 inline bool TM1637Display::display7SegmentCode(byte position, byte code7Seg)
 {
-	char s[2] = { code7Seg, '\0' };
-	return writeChars(s, position, 1, false);
+	return writeChars((char*)&code7Seg, position, 1, false);
 }
 
 inline bool TM1637Display::displayChar(byte position, char ch)
 {
-	char s[2] = { ch, '\0' };
-	return writeChars(s, position, 1);
+	return writeChars(&ch, position, 1);
 }
 
 inline bool TM1637Display::displayString(const char* s) 
 { 
-	return displayString(s, 0, numDigits); 
+	return writeChars(s, 0, numDigits);
 }
 
 inline bool TM1637Display::displayString(const char* s, byte position, byte length)
