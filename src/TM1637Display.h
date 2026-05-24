@@ -22,7 +22,7 @@ They do not have both.
 
 DATA SHEET
 Take care, it's written in Chinglish
-https://cdn.velleman.eu/downloads/29/infosheets/tm1637_datasheet.pdf
+https://muman.ch/pub/tm1637_datasheet.pdf
 */
 
 // These are normally defined in MumanchuDebug.h
