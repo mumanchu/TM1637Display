@@ -7,7 +7,7 @@
 // https://muman.ch
 /*
 Q.	There are several TM1637 libraries out there. Why re-invent the wheel?
-A.	Some wheels give a smoother ride.
+A.	New wheels give a smoother ride.
 
 Most methods return bool: true = success, false = failed (ASSERT or no 'ack')
 
