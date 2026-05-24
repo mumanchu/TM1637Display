@@ -56,7 +56,7 @@ https://cdn.velleman.eu/downloads/29/infosheets/tm1637_datasheet.pdf
 ## Joke of the Week
 
 **Matt's Certainty Principal** \
-_If you measure the mass of a ping pong ball by hitting it with a sledge hammer travelling at the speed of light, it is certain that you won't be able to determine its direction._ 
+_If you measure the mass of a ping pong ball by hitting it with a sledge hammer travelling at close to the speed of light, it is certain that you won't be able to determine its direction._ 
 
 (ref. CERN's Large Hadron Collider)
 
