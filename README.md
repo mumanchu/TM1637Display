@@ -15,20 +15,27 @@ Two models of the display are available. One has a colon for a clock display on 
 They do not have both.
 
 ## Class Reference
+
+Most methods return `bool`: `true` = success, `false` = failed (ASSERT or no 'ack').
+
+`displayString()` does not handle decimal points, they are shown as blanks. Instead, use `setDotPosition()`.
+
+For formatting numbers for display, take a look at `sprintf()`.
+
 ```cpp
 class TM1637Display
 {
 public:
 	bool begin(uint clkPin, uint dioPin, uint numberOfDigits = 4);
-	void displayOn(bool on);
-	void setBrightness(byte brightness);
+	bool displayOn(bool on);
+	bool setBrightness(byte brightness);
+	bool clearDisplay();
 	void setDotPosition(byte position);
 	byte get7SegmentCode(char ch);
-	void display7SegmentCode(byte position, byte code7Seg);
-	void displayChar(byte position, char ch);
-	void displayString(const char* s, byte offset, byte length);
-	void displayString(const char* s);
-	void clearDisplay();
+	bool display7SegmentCode(byte position, byte code7Seg);
+	bool displayChar(byte position, char ch);
+	bool displayString(const char* s);
+	bool displayString(const char* s, byte offset, byte length);
 };
 ```
 
@@ -43,8 +50,8 @@ public:
 
 ## Joke of the Week
 
-Matt's Certainty Principal \
-_If you measure the mass of a ping pong ball by hitting it with a sledge hammer travelling at the speed of light, it is certain that you won't be able to determine its direction._
+**Matt's Certainty Principal** \
+_If you measure the mass of a ping pong ball by hitting it with a sledge hammer travelling at the speed of light, it is certain that you won't be able to determine its direction._ 
 
-
+(ref. CERN's Particle Accelerator LHC)
 
