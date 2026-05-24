@@ -45,8 +45,9 @@ protected:
 	byte dotPosition;
 
 	// This delay may be needed for some [cheap] modules but not all.
-	// the 100pF capacitors on DIO and CLK could be too big, which slows 
-	// the signals, and some TM1637 chips look suspicious (slow clones?)
+	// The 100pF capacitors on DIO and CLK could be too big, which slows 
+	// the signals, and some TM1637 chips look suspicious (slow clones
+	// or out-of-spec chips).
 	const uint delayInMicroseconds = 0;
 
 public:
