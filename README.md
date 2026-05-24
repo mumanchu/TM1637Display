@@ -42,7 +42,7 @@ public:
 ## Data Sheet
 
 Take care, it's written in Chinglish \
-https://cdn.velleman.eu/downloads/29/infosheets/tm1637_datasheet.pdf
+https://muman.ch/pub/tm1637_datasheet.pdf
 
 ## Revision History
 
