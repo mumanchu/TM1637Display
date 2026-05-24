@@ -9,7 +9,7 @@ _Let me know if it doesn't work..._
 
 ## Description
 
-The display module can run on 5V or 3.3V. It's best to power it with 3.3V if connected to a 3.3V microcontroller, or use a logic level converter.
+The display module can run on 5V or 3.3V. If connected to a 3.3V microcontroller it is best to power it from 3.3V. Or use a logic-level converter because the board has 10K pullup resistors to 5V which may eventually damage 3.3V pins if they are not 5V-tolerant.
 
 Two models of the display are available. One has a colon for a clock display on digit 2. The other has decimal points for a decimal display. 
 They do not have both.
