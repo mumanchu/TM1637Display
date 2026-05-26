@@ -1,7 +1,7 @@
 #pragma once
 
 /////////////////////////////////////////////////////////////////////
-// Driver for TM1637 7-Segment LED display with 1..6 digits
+// Driver for TM1637 7-Segment LED display with 2..6 digits
 // Copyright (C) 2026.05.24, mumanchu & muman.ch
 // https://github.com/mumanchu
 // https://muman.ch
